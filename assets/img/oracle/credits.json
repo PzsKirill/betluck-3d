@@ -1,0 +1,34 @@
+[
+ {
+  "file": "bg.webp",
+  "source": "https://unsplash.com/photos/ancient-stone-temple-ruins-surrounded-by-dense-jungle-trees-X5h-unricTs",
+  "image": "https://images.unsplash.com/photo-1782238247363-96563673e5ce",
+  "alt": "Ancient stone temple ruins surrounded by dense jungle trees",
+  "licence": "Unsplash License",
+  "fetched": "2026-09-23"
+ },
+ {
+  "file": "bg2.webp",
+  "source": "https://unsplash.com/photos/a-very-old-building-in-the-middle-of-a-forest-C3St5SQiW_c",
+  "image": "https://images.unsplash.com/photo-1699177981761-958900c26f34",
+  "alt": "a very old building in the middle of a forest",
+  "licence": "Unsplash License",
+  "fetched": "2026-09-23"
+ },
+ {
+  "file": "totem-a.webp",
+  "source": "https://unsplash.com/photos/a-close-up-of-a-statue-of-a-person-viXmnxT3Yvs",
+  "image": "https://images.unsplash.com/photo-1644976914557-8f77300b38dc",
+  "alt": "a close up of a statue of a person",
+  "licence": "Unsplash License",
+  "fetched": "2026-09-23"
+ },
+ {
+  "file": "totem-b.webp",
+  "source": "https://unsplash.com/photos/brown-concrete-statue-ur89YgSlEGE",
+  "image": "https://images.unsplash.com/photo-1569222104095-36f220affe93",
+  "alt": "brown concrete statue",
+  "licence": "Unsplash License",
+  "fetched": "2026-09-23"
+ }
+]
