@@ -192,6 +192,42 @@ section { position: relative; }
 .bar.is-best .bar__odds { color: var(--cyan); }
 .odds.is-3d .books-bars { opacity: 0; pointer-events: none; }
 
+/* ── 7 · Chest: the ring of tablets turns in the canvas, the copy and the find sit on the left ── */
+.chest { height: 260vh; }
+.chest__copy { position: absolute; left: var(--gutter); top: 50%; transform: translateY(-50%); width: min(460px, 88vw); z-index: 2; text-shadow: 0 2px 22px #04121a, 0 1px 3px #04121a; }
+.chest__copy .h2 { margin: 0 0 16px; }
+.chest__go { margin-top: 26px; }
+.chest__go[disabled] { opacity: .55; pointer-events: none; }
+.chest__fine { margin: 14px 0 0; font-size: .78rem; line-height: 1.45; color: var(--mute); max-width: 42ch; }
+.chest__card { margin-top: 22px; padding: 18px 22px 20px; background: #0B1C24e6; border-radius: 10px; backdrop-filter: blur(6px);
+  box-shadow: inset 0 0 0 1px #3DD9FF55, 0 20px 46px -22px #000, 0 0 34px -14px #3DD9FF; animation: chestCard .5s cubic-bezier(.2,.9,.2,1.05); }
+.chest__k { margin: 0; font-size: .68rem; letter-spacing: .14em; text-transform: uppercase; color: var(--cyan); }
+.chest__name { margin: 6px 0 2px; font-weight: 800; font-size: 1.7rem; font-variation-settings: "slnt" -10, "SHRP" 100; }
+.chest__bonus { margin: 0 0 8px; font-size: 1.05rem; color: #DCEBF2; }
+.chest__cond { margin: 0; font-size: .8rem; line-height: 1.45; color: var(--mute); }
+.chest__acts { display: flex; align-items: center; gap: 20px; margin-top: 16px; flex-wrap: wrap; }
+.chest__acts .btn { min-height: 44px; }
+.chest__acts .link { background: none; cursor: pointer; border: 0; padding: 0; color: var(--cyan); }
+@keyframes chestCard { from { opacity: 0; transform: translateY(14px); } }
+.chest .warn { position: absolute; left: 0; right: 0; bottom: 0; min-height: 9vh; display: grid; place-items: center; z-index: 2; }
+.chest .ad { position: absolute; right: var(--gutter); bottom: calc(9vh + 14px); z-index: 2; }
+@media (max-width: 860px) {
+  .chest { height: 300vh; }
+  .chest__copy { top: auto; bottom: calc(9vh + 16px); transform: none; width: calc(100% - var(--gutter) * 2); text-shadow: none;
+    padding: 34px 14px 12px; margin-left: calc(var(--gutter) * -1 + 0px); border-radius: 10px;
+    background: linear-gradient(to top, #08151Cfa 68%, #08151C00); }
+  .chest__copy .h2 { font-size: 1.85rem; }
+  .chest__copy .lede { font-size: .95rem; }
+  .chest.is-open .chest__copy .lede, .chest.is-open .chest__fine, .chest.is-open .chest__copy .eyebrow { display: none; }
+  .chest__go { margin-top: 18px; }
+  .chest__fine { font-size: .68rem; margin-top: 10px; }
+  .chest__card { margin-top: 14px; padding: 14px 16px 16px; }
+  .chest__name { font-size: 1.35rem; }
+  .chest__acts { gap: 14px; }
+  .chest .ad { left: var(--gutter); right: auto; bottom: calc(9vh + 4px); }
+}
+@media (prefers-reduced-motion: reduce) { .chest__card { animation: none; } }
+
 /* Advertising marks: label + advertiser + erid; the warning takes ≥ 7 % of the block's area */
 .ad { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: .78rem; color: var(--mute); }
 .ad__label { font-weight: 700; color: #CFCDE4; }

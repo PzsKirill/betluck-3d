@@ -47,6 +47,7 @@ const MODULES = [
   ["check", () => import("./check.js"), "initCheck"],
   ["odds", () => import("./odds.js"), "initOdds"],
   ["tournament", () => import("./tournament.js"), "initTournament"],
+  ["chest", () => import("./chest.js"), "initChest"],
 ];
 
 const boot = document.getElementById("boot");
