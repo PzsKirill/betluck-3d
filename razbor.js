@@ -123,7 +123,7 @@ export async function initRazbor({ ScrollTrigger }) {
   scene.add(group);
   const sheets = textures.map((tex, i) => {
     const g = new THREE.Group();
-    const back = new THREE.Mesh(sheetGeo, new THREE.MeshPhysicalMaterial({ color: 0x17153a, roughness: 0.25, metalness: 0.2, transparent: true, opacity: 0.92, envMapIntensity: 0.6, clearcoat: 0.6 }));
+    const back = new THREE.Mesh(sheetGeo, new THREE.MeshStandardMaterial({ color: 0x1b2d35, roughness: 0.95, metalness: 0, transparent: true, opacity: 0.95, envMapIntensity: 0.25 }));
     const art = new THREE.Mesh(sheetGeo, new THREE.MeshBasicMaterial({ map: tex, transparent: true, toneMapped: false }));
     art.position.z = 0.01;
     const line = new THREE.LineSegments(edge, new THREE.LineBasicMaterial({ color: 0x3dd9ff, transparent: true, opacity: 0.5, toneMapped: false }));

@@ -48,10 +48,10 @@
   </a>
   <nav class="head__nav" aria-label="Разделы">
     <a href="#jungle">Экспедиция</a>
-    <a href="#line">Линия</a>
-    <a href="#razbor">Разбор</a>
-    <a href="#odds">Где ставить</a>
-    <a href="#tournament">TI 2026</a>
+    <a href="#razbor">Оракулы</a>
+    <a href="#line">Тропа</a>
+    <a href="#odds">Алтарь</a>
+    <a href="#tournament">Карта</a>
     <a href="#books">Букмекеры</a>
   </nav>
   <button class="sound" id="sound" type="button" aria-pressed="false" aria-label="Включить звук">
@@ -98,11 +98,23 @@
   </div>
 </section>
 
-<!-- ═══ 2 · LINE — what is on today ════════════════════════════════════════ -->
-<section class="line" id="line" data-ground="dark">
+<!-- ═══ 2 · ORACLES — the pick taken apart ══════════════════════════════ -->
+<section class="razbor" id="razbor" data-ground="dark">
+  <div class="stage razbor__stage" data-stage="razbor">
+    <div class="razbor__copy">
+      <p class="eyebrow">Оракулы · разбор реального прогноза · <span id="razborMeta"></span></p>
+      <h2 class="h2" id="razborTitle">Spirit — Liquid</h2>
+      <ol class="layers" id="razborLayers"></ol>
+      <p class="verdict" id="razborVerdict"></p>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ 3 · TRAIL — what is on today ════════════════════════════════════ -->
+<section class="line niche" id="line" data-ground="dark">
   <div class="wrap">
     <header class="sec-head">
-      <p class="eyebrow">Сегодня в линии · <span id="lineDate"></span></p>
+      <p class="eyebrow">Тропа матчей · <span id="lineDate"></span></p>
       <h2 class="h2">Что играют сегодня</h2>
       <div class="games" id="lineGames" role="tablist" aria-label="Игра"></div>
     </header>
@@ -111,23 +123,11 @@
   </div>
 </section>
 
-<!-- ═══ 3 · RAZBOR — the pick taken apart ══════════════════════════════════ -->
-<section class="razbor" id="razbor" data-ground="dark">
-  <div class="stage razbor__stage" data-stage="razbor">
-    <div class="razbor__copy">
-      <p class="eyebrow">Разбор реального прогноза · <span id="razborMeta"></span></p>
-      <h2 class="h2" id="razborTitle">Spirit — Liquid</h2>
-      <ol class="layers" id="razborLayers"></ol>
-      <p class="verdict" id="razborVerdict"></p>
-    </div>
-  </div>
-</section>
-
 <!-- ═══ 4 · CHECK — your pick against ours ═════════════════════════════════ -->
 <section class="check" id="check" data-ground="dark">
   <div class="stage check__stage" data-stage="check">
     <div class="check__copy">
-      <p class="eyebrow">Проверь себя · матч дня · <span id="checkMeta"></span></p>
+      <p class="eyebrow">Испытание · матч дня · <span id="checkMeta"></span></p>
       <h2 class="h2">А вы бы как поставили?</h2>
       <p class="lede">Перетащите плашку на исход, в который верите, — и сравните с разбором редакции и голосами читателей.</p>
     </div>
@@ -140,7 +140,7 @@
 <section class="odds" id="odds" data-ground="dark">
   <div class="stage odds__stage" data-stage="odds">
     <div class="odds__copy">
-      <p class="eyebrow">Где ставить · матч дня</p>
+      <p class="eyebrow">Алтарь коэффициентов · матч дня</p>
       <h2 class="h2">Один исход — разные коэффициенты</h2>
       <div class="odds__controls">
         <div class="outcomes" id="oddsOutcomes" role="radiogroup" aria-label="Исход"></div>
@@ -158,7 +158,7 @@
 <section class="tournament" id="tournament" data-ground="dark">
   <div class="stage tournament__stage" data-stage="tournament">
     <div class="tournament__copy">
-      <p class="eyebrow">The International 2026 · Dota 2</p>
+      <p class="eyebrow">Карта экспедиции · The International 2026 · Dota 2</p>
       <h2 class="h2">Путь к трофею — и&nbsp;наши прогнозы на&nbsp;нём</h2>
       <p class="lede" id="tourLede">Каждый узел — серия. Рельеф — преимущество по золоту по минутам. Штамп — зашёл ли прогноз BetLuck.</p>
     </div>
@@ -183,10 +183,10 @@
 </section>
 
 <!-- ═══ 8 · BOOKS — legal bookmakers (advertising block) ═══════════════════ -->
-<section class="books" id="books" data-ground="dark">
+<section class="books niche" id="books" data-ground="dark">
   <div class="wrap">
     <header class="sec-head">
-      <p class="eyebrow">Букмекеры</p>
+      <p class="eyebrow">Хранители ставок · букмекеры</p>
       <h2 class="h2">Ставим только у легальных</h2>
       <p class="lede">Легальные букмекеры внесены в перечень ФНС и принимают интерактивные ставки через ЕЦУП. Других в нашем рейтинге нет.</p>
     </header>
@@ -197,10 +197,10 @@
 </section>
 
 <!-- ═══ 9 · NEWS ═══════════════════════════════════════════════════════════ -->
-<section class="news" id="news" data-ground="dark">
+<section class="news niche" id="news" data-ground="dark">
   <div class="wrap">
     <header class="sec-head">
-      <p class="eyebrow">Новости</p>
+      <p class="eyebrow">Вести со сцены</p>
       <h2 class="h2">Что происходит на сцене</h2>
     </header>
     <ul class="newslist" id="newsList"></ul>
@@ -209,10 +209,10 @@
 </section>
 
 <!-- ═══ 10 · FAQ + responsible betting ═════════════════════════════════════ -->
-<section class="faq" id="faq" data-ground="dark">
+<section class="faq niche" id="faq" data-ground="dark">
   <div class="wrap faq__wrap">
     <header class="sec-head">
-      <p class="eyebrow">Вопросы</p>
+      <p class="eyebrow">Правила храма</p>
       <h2 class="h2">Честно о ставках</h2>
     </header>
     <div class="faq__list">
@@ -228,7 +228,7 @@
 
 </main>
 
-<footer class="foot" id="contact" data-ground="dark">
+<footer class="foot niche" id="contact" data-ground="dark">
   <div class="wrap">
     <svg class="foot__word" viewBox="0 0 1153.7 160.2" role="img" aria-label="BETLUCK"><use href="#logo-g"/></svg>
     <div class="foot__grid">
