@@ -196,7 +196,7 @@ export async function initChest({ gsap, ScrollTrigger }) {
 
   // ── The spin ──
   const DUR = reduced ? 1.2 : 6.0, SETTLE = 0.85, OVER = 0.17;
-  let angle = 0, spinAt = -99, from = 0, to = 0, winner = -1, opened = false, shown = false, lastCross = 0, now = 0;
+  let angle = 0, spinAt = -99, from = 0, to = 0, winner = -1, opened = false, shown = false, lastCross = 0, now = 0, out = 0;   // `out`: how far the tablets have flown out of the chest
 
   function spin() {
     if (spinAt > 0 && now < spinAt + DUR + SETTLE + 0.2) return;
@@ -280,9 +280,10 @@ export async function initChest({ gsap, ScrollTrigger }) {
         else { angle = to; if (!shown) reveal(); }
         const cross = Math.floor(angle / (TAU / tablets.length));
         if (cross !== lastCross) { lastCross = cross; tick(); }
-      } else {
-        angle += dt * 0.12;                                 // before the first opening the ring drifts slowly
+      } else if (opened) {
+        angle += dt * 0.12;                                 // between spins the ring drifts slowly
       }
+      out = damp(out, opened ? 1 : 0, 3.2, dt);             // nothing is shown until the lid is open
 
       if (lidGroup) {
         lidGroup.rotation.x = damp(lidGroup.rotation.x, opened ? -0.95 : 0, 2.6, dt);
@@ -307,18 +308,21 @@ export async function initChest({ gsap, ScrollTrigger }) {
       spGeo.attributes.position.needsUpdate = true;
       for (const tooth of notch.children) { tooth.material.transparent = true; tooth.material.opacity = shown ? 0.35 : 0.9; }
 
+      ring.visible = out > 0.01;
+      notch.visible = out > 0.5;
       for (let i = 0; i < tablets.length; i++) {
         const tb = tablets[i], a = tb.base + angle;
         tb.pull = damp(tb.pull, shown && i === winner ? 1 : 0, 3.4, dt);
-        const r = RAD - tb.pull * 0.45;                      // the winner rises rather than rushes the lens
-        tb.g.position.set(Math.sin(a) * r, tb.pull * 0.66 + Math.sin(t * 0.9 + i) * 0.025, Math.cos(a) * r);
+        const rise = Math.min(1, out * (1.1 + i * 0.06));    // they come out of the lid one after another
+        const r = (RAD - tb.pull * 0.45) * rise;             // the winner rises rather than rushes the lens
+        tb.g.position.set(Math.sin(a) * r, (PED_TOP + 0.3 - RY) * (1 - rise) + tb.pull * 0.66 + Math.sin(t * 0.9 + i) * 0.025, Math.cos(a) * r);
         tb.g.position.x -= tb.pull * 0.62;                   // and drifts back over the chest, clear of the toast
         tb.g.rotation.y = a * (1 - tb.pull);
         tb.g.rotation.x = ring.rotation.x * -tb.pull;        // the winner squares up to the camera
-        tb.g.scale.setScalar(1 + tb.pull * 0.55);
+        tb.g.scale.setScalar((0.12 + rise * 0.88) * (1 + tb.pull * 0.55));
         tb.halo.material.opacity = tb.pull * 0.6;
         const facing = clamp01(Math.cos(a) * 1.4 + 0.25);    // the far side of the ring fades out, or it is just clutter
-        tb.face.material.opacity = (shown ? 0.35 + tb.pull * 0.65 : 1) * (0.1 + facing * 0.9);
+        tb.face.material.opacity = (shown ? 0.35 + tb.pull * 0.65 : 1) * (0.1 + facing * 0.9) * rise;
         tb.g.children[0].visible = facing > 0.04;
       }
     },

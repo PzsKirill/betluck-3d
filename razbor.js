@@ -7,9 +7,14 @@
 
 import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
-import { register, renderer, reduced, pointerFor, damp, smooth } from "./world.js";
+import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
+import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
+import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
+import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
+import { register, renderer, reduced, lite, pointerFor, damp, smooth, dotTexture } from "./world.js";
 import { loadPlate, plateShape, plateGeometry, glowTexture } from "./brand.js";
-import { stoneIdol } from "./props.js";
+import { stoneTotem } from "./props.js";
+import { loadModels, place } from "./models.js";
 import { MATCH } from "./content.js";
 
 const PW = 5.4;
@@ -101,17 +106,66 @@ export async function initRazbor({ ScrollTrigger }) {
   const stage = section.querySelector("[data-stage]");
   const layerEls = [...section.querySelectorAll(".layer")];
   const verdictEl = document.getElementById("razborVerdict");
-  const [plate, tour] = await Promise.all([loadPlate(), fetch("assets/data/tournament.json").then((r) => r.json())]);
+  const [plate, tour, M] = await Promise.all([loadPlate(), fetch("assets/data/tournament.json").then((r) => r.json()),
+    loadModels(["wall", "arch", "column", "torch", "vines", "pothos", "fern", "bush", "rock2", "shrooms", "pebble"])]);
   const textures = await sheetTextures(tour);
 
+  const FOG = 0x0a1820, FLOOR_Y = -3.2;
   const scene = new THREE.Scene();
+  scene.background = new THREE.Color(FOG);
+  scene.fog = new THREE.FogExp2(FOG, 0.042);
   const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  scene.add(new THREE.AmbientLight(0x8fa0ff, 0.3));
-  const key = new THREE.DirectionalLight(0xffffff, 1.2);
-  key.position.set(-4, 6, 8);
+  scene.environmentIntensity = 0.22;
+  scene.add(new THREE.HemisphereLight(0x6f97c0, 0x16241c, 1.25));
+  const key = new THREE.DirectionalLight(0xbcd6ff, 1.25);
+  key.position.set(-4, 8, 6);
   scene.add(key);
+
+  // ── The oracles' chamber: mossy stone, hanging vines, torchlight and a shaft of moonlight ──
+  const room = new THREE.Group();
+  scene.add(room);
+  const mossy = (dim = 1) => (src) => { const m = src.clone(); if (m.color) m.color.multiplyScalar(dim); m.roughness = 0.97; m.metalness = 0; m.envMapIntensity = 0.15; return m; };
+  const floorMat = new THREE.MeshStandardMaterial({ color: 0x223138, roughness: 0.98, metalness: 0 });
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 46).rotateX(-Math.PI / 2), floorMat);
+  floor.position.set(0, FLOOR_Y, -6);
+  room.add(floor);
+  const backWall = new THREE.Mesh(new THREE.PlaneGeometry(46, 20), new THREE.MeshStandardMaterial({ color: 0x1a2b31, roughness: 1, metalness: 0 }));
+  backWall.position.set(0, FLOOR_Y + 10, -16);
+  room.add(backWall);
+  if (M.arch) room.add(place(M.arch, { x: 0, y: FLOOR_Y, z: -13.5, height: 7.5, material: mossy(0.8) }));
+  for (const sx of [-1, 1]) {
+    if (M.column) room.add(place(M.column, { x: sx * 8.5, y: FLOOR_Y, z: -11, height: 9, material: mossy(0.8) }));
+    if (M.rock2) room.add(place(M.rock2, { x: sx * 6.4, y: FLOOR_Y, z: -8.5, height: 1.5, ry: sx * 2, material: mossy(0.7) }));
+    if (M.fern) room.add(place(M.fern, { x: sx * 5.2, y: FLOOR_Y, z: -6.4, height: 1.2, ry: sx, material: mossy(0.5) }));
+    if (M.shrooms) room.add(place(M.shrooms, { x: sx * 6.8, y: FLOOR_Y, z: -5.6, height: 0.55, material: (m) => { const c = m.clone(); c.emissive = new THREE.Color(0x3dd9ff); c.emissiveIntensity = 1.1; return c; } }));
+    if (M.vines) for (let i = 0; i < 3; i++) room.add(place(M.vines, { x: sx * (2.6 + i * 2.4), y: FLOOR_Y + 12.5, z: -9 + i * 1.6, height: 5.5, ry: i, material: mossy(0.5) }));
+    if (M.pothos) room.add(place(M.pothos, { x: sx * 9.2, y: FLOOR_Y + 9, z: -10, height: 4, ry: sx, material: mossy(0.5) }));
+  }
+  const torches = [];
+  for (const sx of [-1, 1]) {
+    if (M.torch) room.add(place(M.torch, { x: sx * 3.1, y: FLOOR_Y + 2.4, z: -10, height: 1.7, material: mossy(0.95) }));
+    const l = new THREE.PointLight(0xffab52, 40, 22, 1.6);
+    l.position.set(sx * 3.1, FLOOR_Y + 3.9, -9.6);
+    const f = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTexture(), color: 0xffa040, transparent: true, opacity: 0.8, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
+    f.scale.setScalar(1.7); f.position.copy(l.position);
+    room.add(l, f);
+    torches.push({ l, f, seed: Math.random() * 10 });
+  }
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 4.2, 14, 20, 1, true),
+    new THREE.MeshBasicMaterial({ color: 0x9fd8ff, transparent: true, opacity: 0.07, depthWrite: false, side: THREE.DoubleSide, blending: THREE.AdditiveBlending, toneMapped: false }));
+  shaft.position.set(0, FLOOR_Y + 7, -7.5);
+  room.add(shaft);
+  const runeRing = new THREE.Mesh(new THREE.TorusGeometry(4.6, 0.05, 6, 48).rotateX(-Math.PI / 2),
+    new THREE.MeshBasicMaterial({ color: 0x3dd9ff, transparent: true, opacity: 0.35, toneMapped: false }));
+  runeRing.position.set(0, FLOOR_Y + 0.03, -4);
+  room.add(runeRing);
+  const spores = new THREE.Points(
+    new THREE.BufferGeometry().setAttribute("position", new THREE.BufferAttribute(new Float32Array(Array.from({ length: (lite ? 40 : 90) * 3 }, () => 0)), 3)),
+    new THREE.PointsMaterial({ size: 0.07, color: 0x8fd8ee, map: dotTexture(), transparent: true, opacity: 0.5, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false }));
+  const spData = Array.from({ length: lite ? 40 : 90 }, () => ({ x: (Math.random() - 0.5) * 26, y: Math.random() * 9, z: -14 + Math.random() * 14, sp: 0.1 + Math.random() * 0.2, ph: Math.random() * 9 }));
+  room.add(spores);
 
   // The sheets: the plate's outline without letters, dark glass, the drawing inside
   const shape = plateShape({ outer: plate.outer, holes: [] }, PW);
@@ -122,6 +176,7 @@ export async function initRazbor({ ScrollTrigger }) {
   const edge = new THREE.EdgesGeometry(sheetGeo);
   const group = new THREE.Group();
   scene.add(group);
+  const setGroupScale = () => group.scale.setScalar(narrow ? 0.9 : 0.62);   // the tablets float between the oracles
   const sheets = textures.map((tex, i) => {
     const g = new THREE.Group();
     const back = new THREE.Mesh(sheetGeo, new THREE.MeshStandardMaterial({ color: 0x1b2d35, roughness: 0.95, metalness: 0, transparent: true, opacity: 0.95, envMapIntensity: 0.25 }));
@@ -146,28 +201,59 @@ export async function initRazbor({ ScrollTrigger }) {
   group.add(halo);
 
   // Two oracles stand under the tablets and hold them up; the one on the speaking side opens its eyes
-  const oracles = [0, 1].map((i) => {
-    const o = stoneIdol({ height: 2.7 });
-    o.group.rotation.y = 0.55 - i * 0.2;                   // both turned toward the tablets
-    scene.add(o.group);
-    return o;
+  const oracles = [-1, 1].map((sx) => {
+    const t = stoneTotem({ height: 6.2, seed: sx + 2 });
+    t.group.rotation.y = -sx * 0.34;                       // both turned in toward the tablets
+    t.base = sx;
+    room.add(t.group);
+    return t;
   });
-  const placeOracles = () => oracles.forEach((o, i) => o.group.position.set(
-    narrow ? -1.7 + i * 3.4 : -4.4 + i * 2.7,              // phones: under the tablets; desktop: below the copy
-    narrow ? -7.4 : -4.1, narrow ? 0 : -2));
+  // Desktop: two oracles flank the tablets. Phone: one stands behind them, tall enough for its face to clear the stack.
+  const placeOracles = () => oracles.forEach((t, i) => {
+    t.group.visible = !narrow || i === 0;
+    t.group.position.set(narrow ? 2.2 : (i ? 2.5 : -3.9), FLOOR_Y, narrow ? -4 : -3.5);
+    t.group.scale.setScalar(0.62);
+  });
 
   let prog = reduced ? 0.95 : 0, cur = prog;
   ScrollTrigger.create({ trigger: section, start: "top top", end: "bottom bottom", onUpdate: (s) => { if (!reduced) prog = s.progress; } });
   const pointer = pointerFor(stage);
   let W = 1, H = 1, narrow = false, active = -1, verdictOn = false;
 
+  let composer = null;
+  if (!lite) {
+    composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    composer.addPass(new UnrealBloomPass(new THREE.Vector2(512, 512), 0.7, 0.55, 0.65));
+    composer.addPass(new OutputPass());
+    composer.setPixelRatio(renderer.getPixelRatio());
+    composer.setSize(innerWidth, innerHeight);
+  }
+
   const chapter = register({
     el: stage, scene, camera,
+    onCanvas(w, h, dpr) { if (composer) { composer.setPixelRatio(dpr); composer.setSize(w, h); } },
+    render: composer ? () => composer.render() : undefined,
     toneMapping: THREE.NeutralToneMapping, exposure: 1,
-    resize(w, h) { W = w; H = h; narrow = w < 860; placeOracles(); },
+    resize(w, h) { W = w; H = h; narrow = w < 860; placeOracles(); setGroupScale(); },
     update(dt, t) {
       pointer.ease(dt, 2);
-      oracles.forEach((o, i) => o.setGlow(active < 0 ? 0.12 : active % 2 === i ? 0.9 : 0.2));
+      oracles.forEach((o, i) => o.setGlow(active < 0 ? 0.1 : narrow || active % 2 === i ? 1 : 0.15));
+      for (const tt of torches) {
+        const k = 0.8 + Math.sin(t * 12 + tt.seed) * 0.12 + Math.sin(t * 7 + tt.seed * 2) * 0.08;
+        tt.l.intensity = 40 * k;
+        tt.f.scale.setScalar(1.7 * k);
+      }
+      runeRing.material.opacity = 0.22 + Math.sin(t * 1.4) * 0.08 + (active >= 0 ? 0.2 : 0);
+      shaft.material.opacity = 0.075 + Math.sin(t * 0.6) * 0.015;
+      const sp = spores.geometry.attributes.position;
+      for (let i = 0; i < spData.length; i++) {
+        const d = spData[i];
+        d.y += dt * d.sp;
+        if (d.y > 9) d.y = 0;
+        sp.setXYZ(i, d.x + Math.sin(t * 0.3 + d.ph) * 0.6, FLOOR_Y + d.y, d.z);
+      }
+      sp.needsUpdate = true;
       cur = window.__qaInstant ? prog : damp(cur, prog, 7, dt);
       const p = cur;
       const open = smooth(0.06, 0.2, p) * (1 - smooth(0.8, 0.9, p));   // sheets out of the plate, then back in
@@ -197,9 +283,9 @@ export async function initRazbor({ ScrollTrigger }) {
       group.rotation.y = pointer.x * 0.08 - 0.08;
       group.rotation.x = -pointer.y * 0.05;
       group.position.y = Math.sin(t * 0.6) * 0.04;
-      camera.position.set(0, 0.2, narrow ? 26 : 14.5);
+      camera.position.set(0, 0.2, narrow ? 23 : 14.5);
       camera.lookAt(0, narrow ? -1.6 : 0, 0);
-      if (!narrow) camera.setViewOffset(W, H, -W * 0.22, 0, W, H); else camera.setViewOffset(W, H, 0, -H * 0.3, W, H);
+      if (!narrow) camera.setViewOffset(W, H, -W * 0.22, 0, W, H); else camera.setViewOffset(W, H, 0, -H * 0.2, W, H);
       camera.updateProjectionMatrix();
 
       // Copy: the matching layer lights up; the verdict when the plate has closed
