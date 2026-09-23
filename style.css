@@ -382,3 +382,31 @@ section { position: relative; }
   .toast { min-width: 0; }
 }
 .jflash { position: absolute; inset: 0; z-index: 3; pointer-events: none; opacity: 0; background: radial-gradient(ellipse at 50% 55%, #E6FBFF 0%, #3DD9FF 45%, #0F0E1D 100%); }
+
+/* the threshold stone: the door opens only when the visitor slides the plate across it (and so confirms 18+) */
+.jgate { margin: 26px 0 0; width: min(430px, 92vw); transition: opacity .5s ease .45s, transform .5s ease .45s; }
+.jgate.is-open { opacity: 0; transform: translateY(10px); pointer-events: none; }
+.jgate.is-done { display: none; }
+.jgate__k { margin: 0 0 10px; font-size: .72rem; letter-spacing: .14em; text-transform: uppercase; color: #BFE9F5; }
+.jgate__track { position: relative; height: 60px; border-radius: 9px; overflow: hidden; touch-action: pan-y;
+  background: linear-gradient(180deg, #16242bee, #0b161cee); box-shadow: inset 0 0 0 1px #3DD9FF33, inset 0 3px 16px #000a, 0 14px 34px -18px #000; }
+.jgate__fill { position: absolute; inset: 0; transform-origin: 0 50%; transform: scaleX(0); background: linear-gradient(90deg, #0E5D77, #3DD9FF33); }
+.jgate__runes { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; padding: 0 22px 0 106px; }
+.jgate__runes i { width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); opacity: .22; box-shadow: 0 0 10px var(--cyan); transition: opacity .2s ease; }
+.jgate__runes i.is-on { opacity: 1; }
+.jgate__hint { position: absolute; inset: 0 0 0 96px; display: flex; align-items: center; justify-content: center; pointer-events: none;
+  font-size: .78rem; letter-spacing: .12em; text-transform: uppercase; color: #BFE9F5; }
+.jgate__knob { position: absolute; left: 5px; top: 8px; width: 92px; height: 44px; padding: 0; border: 0; background: none; cursor: grab; display: grid; place-items: center; touch-action: none; }
+.jgate__knob svg { position: absolute; inset: 0; width: 100%; height: 100%; fill: var(--cyan); filter: drop-shadow(0 0 12px #3DD9FFaa); animation: knobPulse 2.4s ease-in-out infinite; }
+.jgate__knob:focus-visible { outline: 2px solid #fff; outline-offset: 3px; border-radius: 6px; }
+.jgate.is-drag .jgate__knob { cursor: grabbing; }
+.jgate.is-drag .jgate__knob svg, .jgate.is-open .jgate__knob svg { animation: none; }
+.jgate.is-open .jgate__knob { cursor: default; }
+@keyframes knobPulse { 0%, 100% { filter: drop-shadow(0 0 8px #3DD9FF66); } 50% { filter: drop-shadow(0 0 18px #3DD9FFcc); } }
+.jgate__stop { margin: 10px 0 0; font-size: .78rem; font-weight: 600; color: var(--cyan); }
+.jgate__law { margin: 10px 0 0; font-size: .72rem; line-height: 1.4; color: #9FB6C0; }
+.jgate.is-locked .jgate__track { box-shadow: inset 0 0 0 1px #3DD9FF88, inset 0 3px 16px #000a, 0 0 26px -6px #3DD9FF55; }
+.jgate.is-nudge { animation: gateNudge .45s cubic-bezier(.36,.07,.19,.97); }
+@keyframes gateNudge { 10%, 90% { transform: translateX(-3px); } 30%, 70% { transform: translateX(6px); } 50% { transform: translateX(-6px); } }
+@media (prefers-reduced-motion: reduce) { .jgate.is-nudge { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .jgate__knob svg { animation: none; } }

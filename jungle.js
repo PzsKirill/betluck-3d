@@ -10,7 +10,7 @@
 // No people and no animals anywhere (ст. 27 ч. 1 п. 8 «О рекламе»): the explorer is only a point of view.
 
 import * as THREE from "three";
-import { register, renderer, lite, reduced, pointerFor, damp, smooth } from "./world.js";
+import { register, renderer, lite, reduced, pointerFor, damp, smooth, clamp01 } from "./world.js";
 import { EffectComposer } from "three/addons/postprocessing/EffectComposer.js";
 import { RenderPass } from "three/addons/postprocessing/RenderPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
@@ -291,6 +291,129 @@ export async function initJungle({ gsap, ScrollTrigger }) {
   stage.appendChild(flash);
   const toast = window.__achieve;
 
+  // ── The threshold: the door is the 18+ gate. You slide the LUCK plate across the stone, and it sinks. ──
+  // Keyboard works too (the knob is a button); a visitor who already confirmed walks straight in.
+  const gateEl = section.querySelector("[data-gate]");
+  const knob = gateEl?.querySelector("[data-gate-knob]");
+  const gFill = gateEl?.querySelector("[data-gate-fill]");
+  const gHint = gateEl?.querySelector("[data-gate-hint]");
+  const gRunes = gateEl ? [...gateEl.querySelectorAll(".jgate__runes i")] : [];
+  let confirmed = new URLSearchParams(location.search).has("age");      // QA walks in as a confirmed visitor
+  try { confirmed = confirmed || localStorage.getItem("bl_age") === "1"; } catch { /* private mode */ }
+  if (confirmed) gateEl?.classList.add("is-done");
+  let drag = 0, gateK = 0, unlocked = false, dragging = false, moved = false, startX = 0, startDrag = 0;
+
+  function setDrag(v, snap) {
+    drag = clamp01(v);
+    if (!gateEl) return;
+    const travel = Math.max(1, gateEl.querySelector(".jgate__track").clientWidth - knob.offsetWidth - 10);
+    knob.style.transition = snap ? "transform .35s cubic-bezier(.2,.8,.2,1)" : "none";
+    knob.style.transform = `translateX(${(drag * travel).toFixed(1)}px)`;
+    gFill.style.transform = `scaleX(${drag.toFixed(3)})`;
+    knob.setAttribute("aria-valuenow", Math.round(drag * 100));
+    gRunes.forEach((r, i) => r.classList.toggle("is-on", drag > (i + 0.6) / gRunes.length));
+  }
+
+  function rumble() {                                       // stone on stone, only when the sound is on
+    if (!window.__sound || !window.__ac) return;
+    const ac = window.__ac, t = ac.currentTime;
+    const buf = ac.createBuffer(1, Math.floor(ac.sampleRate * 1.6), ac.sampleRate), d = buf.getChannelData(0);
+    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / d.length);
+    const n = ac.createBufferSource(); n.buffer = buf;
+    const f = ac.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 240;
+    const g = ac.createGain(); g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.16, t + 0.12); g.gain.exponentialRampToValueAtTime(0.0001, t + 1.5);
+    n.connect(f).connect(g).connect(ac.destination); n.start(t); n.stop(t + 1.6);
+    const o = ac.createOscillator(), og = ac.createGain();
+    o.type = "sine"; o.frequency.setValueAtTime(72, t); o.frequency.exponentialRampToValueAtTime(38, t + 1.2);
+    og.gain.setValueAtTime(0.0001, t); og.gain.exponentialRampToValueAtTime(0.1, t + 0.1); og.gain.exponentialRampToValueAtTime(0.0001, t + 1.4);
+    o.connect(og).connect(ac.destination); o.start(t); o.stop(t + 1.5);
+  }
+
+  // While the threshold is closed the page goes no further: forward scrolling is refused at the door.
+  // Going back is always allowed — nobody gets trapped, they just can't pass without confirming.
+  const LOCK_P = 0.9;
+  const stopEl = gateEl?.querySelector("[data-gate-stop]");
+  let locked = false, lockY = 0, touchY = 0;
+  const lockSpan = () => Math.max(1, section.offsetHeight - innerHeight);
+  const lockPoint = () => section.offsetTop + lockSpan() * LOCK_P;
+  const gateProg = () => clamp01((scrollY - section.offsetTop) / lockSpan());   // read from the page, so it works off screen too
+  function syncLock() {
+    const want = !reduced && !confirmed && !unlocked && gateProg() >= LOCK_P - 0.004;
+    if (want !== locked) {
+      locked = want;
+      if (stopEl) stopEl.hidden = !locked;
+      gateEl?.classList.toggle("is-locked", locked);
+      if (locked) { lockY = lockPoint(); knob?.focus({ preventScroll: true }); }
+    }
+    if (locked && scrollY > lockY + 2) {                     // anchors, End, scrollbar drags and momentum land here
+      if (window.__lenis) window.__lenis.scrollTo(lockY, { immediate: true, force: true }); else scrollTo(0, lockY);
+      nudge();
+    }
+  }
+  function nudge() {
+    if (!gateEl) return;
+    gateEl.classList.remove("is-nudge");
+    void gateEl.offsetWidth;                                  // restart the shake
+    gateEl.classList.add("is-nudge");
+  }
+  function refuse(e) {
+    if (!locked) return;
+    e.preventDefault();
+    e.stopPropagation();
+    nudge();
+  }
+  if (!reduced) {
+    addEventListener("wheel", (e) => { if (locked && e.deltaY > 0) refuse(e); }, { passive: false, capture: true });
+    addEventListener("touchstart", (e) => { touchY = e.touches[0]?.clientY || 0; }, { passive: true, capture: true });
+    addEventListener("touchmove", (e) => { if (locked && touchY - (e.touches[0]?.clientY || 0) > 2) refuse(e); }, { passive: false, capture: true });
+    const FWD = new Set(["ArrowDown", "PageDown", "End", " ", "Spacebar"]);
+    addEventListener("keydown", (e) => { if (locked && FWD.has(e.key) && !e.shiftKey && e.target !== knob) refuse(e); }, { capture: true });
+    addEventListener("scroll", syncLock, { passive: true });
+    window.__lenis?.on?.("scroll", syncLock);
+  }
+
+  function unlock() {
+    if (unlocked) return;
+    unlocked = true;
+    try { localStorage.setItem("bl_age", "1"); } catch { /* private mode */ }
+    setDrag(1, true);
+    gateEl?.classList.add("is-open");
+    if (gHint) gHint.textContent = "Храм открыт";
+    knob?.setAttribute("aria-disabled", "true");
+    toast?.("Порог пройден", "Вам есть 18 — дверь храма открыта");
+    rumble();
+  }
+
+  if (knob && !confirmed) {
+    knob.addEventListener("pointerdown", (e) => {
+      if (unlocked) return;
+      dragging = true; moved = false; startX = e.clientX; startDrag = drag;
+      gateEl.classList.add("is-drag");
+      knob.setPointerCapture?.(e.pointerId);
+    });
+    knob.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+      const travel = Math.max(1, gateEl.querySelector(".jgate__track").clientWidth - knob.offsetWidth - 10);
+      const dx = e.clientX - startX;
+      if (Math.abs(dx) > 3) moved = true;
+      setDrag(startDrag + dx / travel, false);
+      if (drag > 0.97) { dragging = false; gateEl.classList.remove("is-drag"); unlock(); }
+    });
+    const end = () => {
+      if (!dragging) return;
+      dragging = false; gateEl.classList.remove("is-drag");
+      if (drag > 0.9) unlock(); else setDrag(0, true);
+    };
+    knob.addEventListener("pointerup", end);
+    knob.addEventListener("pointercancel", end);
+    knob.addEventListener("click", () => { if (moved) { moved = false; return; } unlock(); });   // Enter, Space, or a plain tap
+    knob.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowRight" || e.key === "ArrowUp") { e.preventDefault(); setDrag(drag + 0.25, true); if (drag > 0.99) unlock(); }
+      if (e.key === "ArrowLeft" || e.key === "ArrowDown") { e.preventDefault(); setDrag(drag - 0.25, true); }
+    });
+    addEventListener("resize", () => { setDrag(drag, false); if (locked) lockY = lockPoint(); });
+  }
+
   const gradeShader = {
     uniforms: { tDiffuse: { value: null }, uTime: { value: 0 } },
     vertexShader: "varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }",
@@ -329,15 +452,23 @@ export async function initJungle({ gsap, ScrollTrigger }) {
       cur = window.__qaInstant ? prog : damp(cur, prog, 5, dt);
       const p = cur;
       // 0–0.8 the walk, 0.8–0.92 up to the gate looking at the relic, 0.92–1 the door opens and we go in
-      const w = smooth(0.02, 0.8, p), up = smooth(0.8, 0.92, p), open = smooth(0.9, 0.98, p), inn = smooth(0.95, 1, p);
+      const w = smooth(0.02, 0.8, p), up = smooth(0.8, 0.92, p);
+      // The door waits at the threshold: it sinks for a confirmed 18+ visitor, and trembles while the plate slides
+      gateK = damp(gateK, unlocked ? 1 : 0, 3.2, dt);
+      syncLock();
+      const pass = confirmed ? 1 : gateK;
+      const open = Math.max(confirmed ? smooth(0.9, 0.98, p) : 0, gateK, drag * 0.14);
+      const inn = smooth(0.95, 1, p) * pass;
       path.getPointAt(Math.min(0.999, w), pos);
       path.getPointAt(Math.min(1, w + 0.02), ahead);
       pos.y += Math.sin(w * 90) * 0.025 * (1 - up);             // footsteps
-      tmp.copy(gatePos); tmp.z += 1.5 - inn * 2.2;
+      // Phones see a narrow slice of the world, so at the gate they stand further back and aim at the door itself
+      const narrow = clamp01((1.5 - camera.aspect) / 0.9);
+      tmp.copy(gatePos); tmp.z += 1.5 + narrow * 5.2 - inn * (2.2 + narrow * 5.2);
       pos.lerp(tmp, up);
       camera.position.copy(pos);
       ahead.y = pos.y - 0.05;
-      look.copy(ahead).lerp(tmp.set(0, platformY + 4.2 - inn * 2.2, Z_TEMPLE), up);
+      look.copy(ahead).lerp(tmp.set(0, platformY + 4.2 - narrow * 1.6 - inn * 2.2, Z_TEMPLE), up);
       const glance = smooth(0.26, 0.34, p) * (1 - smooth(0.48, 0.56, p));   // look at the counting table
       look.lerp(tmp.set(TABLE.x - 0.2, 0.75, TABLE.z + 0.6), glance * 0.85);
       look.x += pointer.x * 1.2 * (1 - up * 0.6);
@@ -384,10 +515,10 @@ export async function initJungle({ gsap, ScrollTrigger }) {
       relicArc.material.uniforms.uIntensity.value = lit * 1.6;
       door.position.y = platformY + 2.2 - open * 4.6;
       beyond.material.color.setRGB(0.24 + inn * 0.7, 0.85 + inn * 0.15, 1);
-      flash.style.opacity = (smooth(0.955, 0.995, p) * 0.9).toFixed(3);
+      flash.style.opacity = (smooth(0.955, 0.995, p) * 0.9 * pass).toFixed(3);
 
       // Copy beats
-      const b = p < 0.1 ? 0 : p > 0.28 && p < 0.5 ? 1 : p > 0.8 && p < 0.97 ? 2 : -1;
+      const b = p < 0.1 ? 0 : p > 0.28 && p < 0.5 ? 1 : p > 0.8 && p < (confirmed || unlocked ? 0.97 : 1.01) ? 2 : -1;
       if (b !== beatOn) {
         beatOn = b;
         beats.forEach((el, i) => el.classList.toggle("is-on", i === b));
@@ -397,5 +528,5 @@ export async function initJungle({ gsap, ScrollTrigger }) {
     },
   });
 
-  return { chapter, start() { beats[0]?.classList.add("is-on"); } };
+  return { chapter, start() { if (beatOn < 0) beats[0]?.classList.add("is-on"); } };   // the scroll may already own the beats
 }
