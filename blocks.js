@@ -96,7 +96,7 @@ function initCheck() {
   try { mine = localStorage.getItem("bl-mine"); } catch {}
   const render = () => {
     teams.querySelectorAll(".team-drop").forEach((b) => b.classList.toggle("is-mine", b.dataset.side === mine));
-    if (!mine) { res.innerHTML = `<p class="check__hint">Перетащите плашку на команду — или нажмите на её название.</p>`; return; }
+    if (!mine) { res.innerHTML = `<p class="check__hint">Перетащите плашку к идолу команды — или нажмите на её название.</p>`; return; }
     const r = DAY.readers, ours = DAY.outcomes.find((o) => o.id === DAY.pick);
     const agree = (mine === "a" && (DAY.pick === "a" || DAY.pick === "pick")) || mine === DAY.pick;
     res.innerHTML = `

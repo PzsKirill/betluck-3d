@@ -467,6 +467,13 @@ section { position: relative; }
     radial-gradient(120% 75% at 50% -12%, #1B2F38 0%, #101E25 52%, #0C161C 100%),
     repeating-linear-gradient(0deg, #ffffff07 0 1px, transparent 1px 134px); }
 
+/* a bead of runes marks the step from one chapter to the next */
+.niche > .wrap::before {
+  content: "◆ ◆ ◆"; display: block; text-align: center; font-size: 9px; letter-spacing: 18px; text-indent: 18px;
+  color: #3DD9FF66; text-shadow: 0 0 10px #3DD9FF55; margin-bottom: clamp(26px, 4vh, 54px);
+}
+.foot.niche > .wrap::before { content: none; }
+
 /* headings are carved plaques: a rune bar burns beside them */
 .niche .sec-head { position: relative; padding-left: 30px; }
 .niche .sec-head::before {
@@ -477,6 +484,28 @@ section { position: relative; }
 .niche .eyebrow::before {
   content: ""; display: inline-block; width: 7px; height: 7px; margin-right: 10px; vertical-align: 1px;
   background: var(--cyan); transform: rotate(45deg); box-shadow: 0 0 9px var(--cyan);
+}
+
+/* the trail: match plates step away from you, a marked path running down their left */
+.matches { position: relative; padding-left: 30px; }
+.matches::before {
+  content: ""; position: absolute; left: 10px; top: 10px; bottom: 10px; width: 2px; border-radius: 2px;
+  background: repeating-linear-gradient(180deg, #3DD9FF66 0 7px, transparent 7px 16px);
+}
+.match { position: relative; }
+.match::before {
+  content: ""; position: absolute; left: -25px; top: 50%; width: 11px; height: 11px; margin-top: -6px;
+  background: var(--cyan); transform: rotate(45deg); box-shadow: 0 0 12px #3DD9FFaa;
+}
+.match:nth-child(2) { margin-left: 14px; }
+.match:nth-child(3) { margin-left: 28px; }
+.match:nth-child(4) { margin-left: 42px; }
+.match:nth-child(n+5) { margin-left: 56px; }
+.match.is-day::before { box-shadow: 0 0 20px var(--cyan); }
+@media (max-width: 860px) {
+  .matches { padding-left: 22px; }
+  .match:nth-child(2), .match:nth-child(3), .match:nth-child(4), .match:nth-child(n+5) { margin-left: 0; }
+  .match::before { left: -18px; width: 9px; height: 9px; }
 }
 
 /* rows become stone plates with a lit edge */

@@ -12,7 +12,7 @@ import { createArc, glowTexture } from "./brand.js";
 import { state } from "./blocks.js";
 import { BOOKS } from "./content.js";
 
-const SLANT = Math.tan(THREE.MathUtils.degToRad(12));
+const SLANT = 0;                                   // the altar columns stand upright; the brand slant lives in the labels
 const GAP = 1.25, BW = 0.9;
 
 export async function initOdds() {
@@ -23,23 +23,34 @@ export async function initOdds() {
   const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+  scene.environmentIntensity = 0.3;                 // the altar is lit by torches, not by a showroom
   scene.add(new THREE.AmbientLight(0x8fa0ff, 0.35));
-  const key = new THREE.DirectionalLight(0xffffff, 1.1);
+  const key = new THREE.DirectionalLight(0xdbe8ff, 0.85);
   key.position.set(-4, 6, 8);
   scene.add(key);
 
   // A floor line for the plates to stand on
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(GAP * BOOKS.length + 2, 3).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x1b192f, roughness: 0.4, metalness: 0.5, envMapIntensity: 0.4, transparent: true, opacity: 0.9 }));
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(GAP * BOOKS.length + 2, 3).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x223138, roughness: 0.95, metalness: 0, envMapIntensity: 0.2, transparent: true, opacity: 0.92 }));
   floor.position.set(0, 0, 0);
   scene.add(floor);
 
-  const box = new THREE.BoxGeometry(BW, 1, 0.34).translate(0, 0.5, 0);
+  // The altar: one carved column per bookmaker, as tall as its odds, with a rune ring under the capital
+  const box = new THREE.CylinderGeometry(BW * 0.44, BW * 0.52, 1, 6).translate(0, 0.5, 0);
+  const capGeo = new THREE.BoxGeometry(BW * 1.15, 0.12, BW * 1.15);
+  const ringGeo = new THREE.TorusGeometry(BW * 0.5, 0.022, 6, 24).rotateX(Math.PI / 2);
   const bars = BOOKS.map((b, i) => {
-    const mat = new THREE.MeshStandardMaterial({ color: 0x232140, emissive: 0x3dd9ff, emissiveIntensity: 0.02, roughness: 0.35, metalness: 0.45, envMapIntensity: 0.8 });
+    const mat = new THREE.MeshStandardMaterial({ color: 0x1e2c34, emissive: 0x3dd9ff, emissiveIntensity: 0.02, roughness: 0.92, metalness: 0, envMapIntensity: 0.2 });
     const m = new THREE.Mesh(box, mat);
     m.matrixAutoUpdate = false;
     scene.add(m);
-    const edge = new THREE.LineSegments(new THREE.EdgesGeometry(box), new THREE.LineBasicMaterial({ color: 0x3dd9ff, transparent: true, opacity: 0.35, toneMapped: false }));
+    const cap = new THREE.Mesh(capGeo, mat);                     // the capital rides on top of the column
+    cap.matrixAutoUpdate = false;
+    scene.add(cap);
+    const ringMat = new THREE.MeshBasicMaterial({ color: 0x3dd9ff, transparent: true, opacity: 0.4, toneMapped: false });
+    const ring = new THREE.Mesh(ringGeo, ringMat);
+    ring.matrixAutoUpdate = false;
+    scene.add(ring);
+    const edge = new THREE.LineSegments(new THREE.EdgesGeometry(box), new THREE.LineBasicMaterial({ color: 0x3dd9ff, transparent: true, opacity: 0.22, toneMapped: false }));
     edge.matrixAutoUpdate = false;
     scene.add(edge);
     const label = document.createElement("b");
@@ -48,7 +59,7 @@ export async function initOdds() {
     name.className = "oddsname";
     name.textContent = b.name;
     stage.append(label, name);
-    return { b, m, mat, edge, label, name, x: (i - (BOOKS.length - 1) / 2) * GAP, h: 0.2, target: 0.2, best: 0, lw: 0, nw: 0 };
+    return { b, m, mat, cap, ring, ringMat, edge, label, name, x: (i - (BOOKS.length - 1) / 2) * GAP, h: 0.2, target: 0.2, best: 0, lw: 0, nw: 0 };
   });
   const arc = createArc({ points: 40, width: 0.08 });
   scene.add(arc.mesh);
@@ -57,7 +68,7 @@ export async function initOdds() {
   scene.add(pool);
   const legend = document.createElement("p");
   legend.className = "oddslegend";
-  legend.textContent = "Высота плиты — коэффициент на выбранный исход. Коэффициенты — иллюстрация.";
+  legend.textContent = "Высота колонны — коэффициент на выбранный исход. Коэффициенты — иллюстрация.";
   stage.appendChild(legend);
 
   let bestI = 0;
@@ -101,11 +112,14 @@ export async function initOdds() {
         r.h = window.__qaInstant || reduced ? r.target : damp(r.h, r.target, 6, dt);
         r.best = damp(r.best, i === bestI ? 1 : 0, 6, dt);
         T.makeTranslation(r.x, 0, 0); S.makeScale(1, r.h, 1);
-        r.m.matrix.copy(T).multiply(shear).multiply(S);
+        r.m.matrix.copy(T).multiply(S);
         r.edge.matrix.copy(r.m.matrix);
-        r.mat.color.setRGB(0.137 + r.best * 0.1, 0.13 + r.best * 0.72, 0.25 + r.best * 0.75);
-        r.mat.emissiveIntensity = 0.03 + r.best * 0.35;
-        r.edge.material.opacity = 0.3 + r.best * 0.5;
+        r.cap.matrix.makeTranslation(r.x, r.h + 0.06, 0);
+        r.ring.matrix.makeTranslation(r.x, r.h - 0.16, 0);
+        r.mat.color.setRGB(0.118 + r.best * 0.11, 0.172 + r.best * 0.62, 0.204 + r.best * 0.76);
+        r.mat.emissiveIntensity = 0.03 + r.best * 0.4;
+        r.ringMat.opacity = 0.35 + r.best * 0.6;
+        r.edge.material.opacity = 0.2 + r.best * 0.4;
         // labels: odds over the top, name under the foot
         tmp.set(r.x + r.h * SLANT, r.h + 0.12, 0.2).project(camera);
         r.label.style.transform = `translate3d(${((tmp.x * 0.5 + 0.5) * W - r.lw / 2).toFixed(1)}px, ${((-tmp.y * 0.5 + 0.5) * H - 34).toFixed(1)}px, 0)`;

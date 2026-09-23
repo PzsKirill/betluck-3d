@@ -9,6 +9,7 @@ import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { register, renderer, reduced, lite, damp, smooth } from "./world.js";
 import { loadPlate, plateGeometry, createArc, glowTexture } from "./brand.js";
 import { state } from "./blocks.js";
+import { stoneIdol } from "./props.js";
 import { DAY } from "./content.js";
 
 function thud() {
@@ -54,6 +55,10 @@ export async function initCheck() {
   puck.add(halo);
   scene.add(puck);
 
+  // Each team stands as a carved idol; the plate is thrown to the one you believe in
+  const idols = { a: stoneIdol({ height: 2.6 }), b: stoneIdol({ height: 2.6 }) };
+  for (const side of ["a", "b"]) { idols[side].group.rotation.y = side === "a" ? 0.34 : -0.34; scene.add(idols[side].group); }
+
   const arcs = { a: createArc({ points: 64, width: 0.07 }), b: createArc({ points: 64, width: 0.07 }) };
   scene.add(arcs.a.mesh, arcs.b.mesh);
 
@@ -66,6 +71,8 @@ export async function initCheck() {
       const b = el.querySelector(".team-drop__name").getBoundingClientRect();
       const nx = ((b.left + b.width / 2 - r.left) / r.width) * 2 - 1, ny = -(((b.top + b.height * 1.2 - r.top) / r.height) * 2 - 1);
       anchor[el.dataset.side].set(nx * half, ny * half / (W / H), 0);
+      const ai = anchor[el.dataset.side];
+      idols[el.dataset.side].group.position.set(ai.x, ai.y - 2.9, -4);   // the idol stands under its name
     }
   };
 
@@ -132,6 +139,7 @@ export async function initCheck() {
       puck.position.y += Math.sin(t * 1.4) * 0.002;
       puck.rotation.z = THREE.MathUtils.clamp((target.x - puck.position.x) * -0.15, -0.35, 0.35);
       puck.rotation.y = Math.sin(t * 0.7) * 0.12;
+      for (const side of ["a", "b"]) idols[side].setGlow(mine === side ? 0.95 : mine ? 0.12 : 0.3 + Math.sin(t * 2 + (side === "a" ? 0 : 1.6)) * 0.12);
       const since = performance.now() / 1000 - landT;
       body.material[0].emissiveIntensity = 0.3 + (since < 1.2 ? (1 - since / 1.2) * 0.9 : 0);
       halo.material.opacity = 0.25 + (since < 1.2 ? (1 - since / 1.2) * 0.5 : 0);

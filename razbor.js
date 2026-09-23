@@ -9,6 +9,7 @@ import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
 import { register, renderer, reduced, pointerFor, damp, smooth } from "./world.js";
 import { loadPlate, plateShape, plateGeometry, glowTexture } from "./brand.js";
+import { stoneIdol } from "./props.js";
 import { MATCH } from "./content.js";
 
 const PW = 5.4;
@@ -144,6 +145,17 @@ export async function initRazbor({ ScrollTrigger }) {
   halo.position.z = -0.8;
   group.add(halo);
 
+  // Two oracles stand under the tablets and hold them up; the one on the speaking side opens its eyes
+  const oracles = [0, 1].map((i) => {
+    const o = stoneIdol({ height: 2.7 });
+    o.group.rotation.y = 0.55 - i * 0.2;                   // both turned toward the tablets
+    scene.add(o.group);
+    return o;
+  });
+  const placeOracles = () => oracles.forEach((o, i) => o.group.position.set(
+    narrow ? -1.7 + i * 3.4 : -4.4 + i * 2.7,              // phones: under the tablets; desktop: below the copy
+    narrow ? -7.4 : -4.1, narrow ? 0 : -2));
+
   let prog = reduced ? 0.95 : 0, cur = prog;
   ScrollTrigger.create({ trigger: section, start: "top top", end: "bottom bottom", onUpdate: (s) => { if (!reduced) prog = s.progress; } });
   const pointer = pointerFor(stage);
@@ -152,9 +164,10 @@ export async function initRazbor({ ScrollTrigger }) {
   const chapter = register({
     el: stage, scene, camera,
     toneMapping: THREE.NeutralToneMapping, exposure: 1,
-    resize(w, h) { W = w; H = h; narrow = w < 860; },
+    resize(w, h) { W = w; H = h; narrow = w < 860; placeOracles(); },
     update(dt, t) {
       pointer.ease(dt, 2);
+      oracles.forEach((o, i) => o.setGlow(active < 0 ? 0.12 : active % 2 === i ? 0.9 : 0.2));
       cur = window.__qaInstant ? prog : damp(cur, prog, 7, dt);
       const p = cur;
       const open = smooth(0.06, 0.2, p) * (1 - smooth(0.8, 0.9, p));   // sheets out of the plate, then back in

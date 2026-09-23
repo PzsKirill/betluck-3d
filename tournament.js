@@ -125,8 +125,9 @@ export async function initTournament({ gsap, ScrollTrigger }) {
   const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 200);
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-  scene.add(new THREE.AmbientLight(0x8a93d8, 0.35));
-  const key = new THREE.DirectionalLight(0xffffff, 1.1);
+  scene.environmentIntensity = 0.3;                  // the map lies in the temple, not in a studio
+  scene.add(new THREE.AmbientLight(0x6f86b0, 0.26));
+  const key = new THREE.DirectionalLight(0xdbe8ff, 0.85);
   key.position.set(-6, 14, 10);
   scene.add(key);
 
@@ -138,13 +139,13 @@ export async function initTournament({ gsap, ScrollTrigger }) {
     g.fillStyle = gr; g.fillRect(0, 0, 256, 256);
     return new THREE.CanvasTexture(c);
   })();
-  const floor = new THREE.Mesh(new THREE.PlaneGeometry(90, 50).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x15132a, roughness: 0.55, metalness: 0.5, alphaMap: fade, transparent: true, envMapIntensity: 0.35 }));
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(90, 50).rotateX(-Math.PI / 2), new THREE.MeshStandardMaterial({ color: 0x1d2a31, roughness: 0.96, metalness: 0, alphaMap: fade, transparent: true, envMapIntensity: 0.2 }));
   floor.position.set(COLW * 2.5, -0.02, -1);
   scene.add(floor);
 
   // ── Series plates ──
   const nodeGeo = plateGeometry({ outer: plate.outer, holes: [] }, { width: NODE_W, depth: 0.12, bevel: 0.02 }).rotateX(-Math.PI / 2);
-  const nodeMat = () => new THREE.MeshStandardMaterial({ color: 0x1b2446, emissive: 0x3dd9ff, emissiveIntensity: 0.06, roughness: 0.3, metalness: 0.6, envMapIntensity: 0.9 });
+  const nodeMat = () => new THREE.MeshStandardMaterial({ color: 0x25343c, emissive: 0x3dd9ff, emissiveIntensity: 0.06, roughness: 0.9, metalness: 0, envMapIntensity: 0.25 });
   const edgeLine = new THREE.EdgesGeometry(nodeGeo, 30);
   const pools = glowTexture();
   const nodes = {};
@@ -186,7 +187,7 @@ export async function initTournament({ gsap, ScrollTrigger }) {
   for (const s of series) {
     if (!s.prediction) continue;
     const hit = s.prediction.hit;
-    const m = new THREE.Mesh(stampGeo, new THREE.MeshStandardMaterial({ color: hit ? 0x3dd9ff : 0x8e93b3, emissive: hit ? 0x19b7e6 : 0x3a3f5c, emissiveIntensity: hit ? 0.55 : 0.2, roughness: 0.35, metalness: 0.1, envMapIntensity: 0.5 }));
+    const m = new THREE.Mesh(stampGeo, new THREE.MeshStandardMaterial({ color: hit ? 0x3dd9ff : 0x7d8496, emissive: hit ? 0x19b7e6 : 0x2f3542, emissiveIntensity: hit ? 0.6 : 0.18, roughness: 0.6, metalness: 0, envMapIntensity: 0.3 }));
     m.position.set(-NODE_W * 0.95, 0.85, 0);
     m.scale.setScalar(0.85);
     nodes[s.id].g.add(m);
